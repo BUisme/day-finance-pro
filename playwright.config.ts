@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/e2e",
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: "http://127.0.0.1:4173/day-finance-pro/",
     viewport: { width: 360, height: 800 },
     launchOptions: {
       executablePath: process.env.CHROMIUM_PATH || (existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined),
@@ -11,9 +11,9 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "npm run dev -- --port 5173",
-    url: "http://127.0.0.1:5173",
-    reuseExistingServer: !process.env.CI,
+    command: "npm run preview -- --port 4173 --strictPort",
+    url: "http://127.0.0.1:4173/day-finance-pro/",
+    reuseExistingServer: false,
   },
   reporter: "list",
 });
