@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/test";
 async function noOverflow(page: import("@playwright/test").Page) {
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+  const layout = await page.evaluate(() => ({
+    viewport: innerWidth,
+    width: document.documentElement.scrollWidth,
+    overflowing: Array.from(document.querySelectorAll("body *"))
+      .filter(node => node.getBoundingClientRect().right > innerWidth + 1)
+      .slice(0, 12)
+      .map(node => ({ tag: node.tagName, class: node.className, width: node.getBoundingClientRect().width })),
+  }));
+  expect(layout.width, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewport);
 }
 test("four pages, plan, wallets, debt schedules and responsive widths", async ({
   page,
