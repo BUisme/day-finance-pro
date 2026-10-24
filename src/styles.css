@@ -1091,3 +1091,27 @@ summary {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep intrinsic text widths from expanding mobile grid columns. */
+.summary-grid,
+.wallet-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.summary-card,
+.debt-stats > div {
+  min-width: 0;
+}
+.hero-card > .amount,
+.summary-card > .amount,
+.debt-stats .amount {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .wallet-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .summary-card > .amount {
+    font-size: clamp(18px, 5.6vw, 22px);
+  }
+}

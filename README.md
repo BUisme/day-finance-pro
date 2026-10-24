@@ -19,12 +19,12 @@ npm run dev
 npm run typecheck
 npm test
 npm run build
-npm run test:e2e
+npm run test:e2e # ต้อง build ก่อน: ทดสอบ dist ด้วย Vite preview
 ```
 
 CI ติดตั้ง Playwright Chromium อัตโนมัติ และทดสอบ typecheck, unit, build, E2E ทุก push/PR
 
-E2E ใช้ Chromium ที่ `/usr/bin/chromium` หรือกำหนด `CHROMIUM_PATH` เป็น path ของ browser ที่ติดตั้งไว้แล้ว เช่น `CHROMIUM_PATH=/path/to/chromium npm run test:e2e` หากไม่มี system browser ให้ติดตั้งด้วย `npx playwright install --with-deps chromium` ก่อน ระบบจะใช้ browser ของ Playwright และเริ่ม Vite อัตโนมัติ ห้ามรัน E2E กับ browser profile ที่มีข้อมูลเงินจริง
+E2E ใช้ Chromium ที่ `/usr/bin/chromium` หรือกำหนด `CHROMIUM_PATH` เป็น path ของ browser ที่ติดตั้งไว้แล้ว เช่น `CHROMIUM_PATH=/path/to/chromium npm run test:e2e` หากไม่มี system browser ให้ติดตั้งด้วย `npx playwright install --with-deps chromium` ก่อน ระบบจะใช้ browser ของ Playwright และเริ่ม Vite preview สำหรับ production build อัตโนมัติ ห้ามรัน E2E กับ browser profile ที่มีข้อมูลเงินจริง
 
 ## สิ่งที่ทำได้
 
@@ -69,3 +69,16 @@ src/styles.css   Design tokens, responsive layout, Tailwind import
 ไม่มี reference image ในไฟล์แนบที่ได้รับ จึงใช้ tokens ใน brief เป็นแนวทาง ไม่มี export/backup, auth, sync, QR, ดอกเบี้ยซับซ้อน หรือ backend ไม่แตะ AppSheet/Google Sheets ไม่ deploy อัตโนมัติ ไม่ merge PR อัตโนมัติ
 
 V2.1 ควรเพิ่ม backup/restore ที่ผู้ใช้ควบคุม, migration/validation ของข้อมูลเต็มรูปแบบ, การแก้ไขหรือ void transaction และ backend ตามขอบเขตที่อนุมัติแยกต่างหาก
+
+
+## GitHub Pages
+
+Vite กำหนด `base: '/day-finance-pro/'` ให้ JS/CSS ใน `dist/index.html` ชี้ไปที่ `/day-finance-pro/assets/` แอปใช้ state สำหรับสลับแท็บ ไม่มี pathname router หรือ deep-link routes จึงไม่ต้องเพิ่ม BrowserRouter basename หรือ 404 fallback และไม่เปลี่ยน URL เมื่อสลับแท็บ ห้ามนำ source `index.html` ไปเสิร์ฟตรง ๆ ต้อง deploy ผลลัพธ์ `dist` เท่านั้น
+
+1. Merge branch แก้ไขเข้า `main` ผ่าน PR ตามขั้นตอนของ repository
+2. ไปที่ **Settings → Pages → Build and deployment → Source: GitHub Actions** (ไม่ใช่ Deploy from a branch)
+3. ตรวจว่า Settings → Actions → General อนุญาต GitHub Actions และ official actions ที่ workflow ใช้ หาก environment `github-pages` มี deployment rules ให้ยอมรับ branch `main` และอนุมัติ deployment เมื่อจำเป็น
+4. Workflow **Deploy GitHub Pages** ทำงานเมื่อ push เข้า `main` หรือเลือก Run workflow บน `main` เท่านั้น โดยติดตั้ง ทดสอบ build/upload `dist` และใช้ `actions/deploy-pages@v4` ไม่ใช้ PAT หรือ credentials ใน source ส่วน workflow **Validate MVP** เดิมคงอยู่
+5. รอ build/deploy สำเร็จ แล้วเปิด `https://buisme.github.io/day-finance-pro/` ต้องเห็น DAY Finance Pro และสรุปการเงิน ตรวจ Network ว่า JS/CSS มาจาก `/day-finance-pro/assets/` ได้ HTTP 200 หากยังเห็นไฟล์เก่าให้ลอง hard refresh
+
+ทดสอบก่อน deploy: `npm ci --cache /tmp/day-npm-cache && npm run typecheck && npm test && npm run build && npm run test:e2e` Playwright ใช้ production preview ที่ port 4173 และทดสอบ subpath จริง รวมการเปิด Dashboard, asset status/MIME, สลับแท็บ และ reload โดยใช้ browser context แยก ไม่ล้างข้อมูลผู้ใช้
