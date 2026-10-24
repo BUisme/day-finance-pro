@@ -16,6 +16,7 @@
   <body>
     <div id="root">
       <main
+        data-boot-screen
         style="
           background: #000;
           color: #fff;
@@ -25,11 +26,37 @@
         "
       >
         <h1>DAY Finance Pro</h1>
-        <p>กำลังเปิดแอป หากข้อความนี้ค้างให้ลองรีเฟรชหน้า</p>
+        <p id="boot-message" role="status">กำลังเปิดแอป…</p>
         <noscript>กรุณาเปิด JavaScript เพื่อใช้งานแอป</noscript
         ><a style="color: #b8f36b" href="./">โหลดหน้าใหม่</a>
       </main>
     </div>
+    <script>
+      (() => {
+        const fail = () => {
+          if (!document.querySelector("[data-boot-screen]")) return;
+          const message = document.getElementById("boot-message");
+          if (message) {
+            message.textContent =
+              "โหลดแอปไม่สำเร็จ กรุณาลองโหลดหน้าใหม่ หากยังพบปัญหาให้ติดต่อผู้ดูแล ข้อมูลในอุปกรณ์ยังไม่ถูกลบ";
+            message.setAttribute("role", "alert");
+          }
+        };
+        window.addEventListener(
+          "error",
+          (event) => {
+            if (
+              event.target instanceof HTMLScriptElement &&
+              event.target.type === "module"
+            )
+              fail();
+          },
+          true,
+        );
+        window.addEventListener("unhandledrejection", fail);
+        window.setTimeout(fail, 8000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

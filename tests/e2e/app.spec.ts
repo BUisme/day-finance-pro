@@ -216,7 +216,7 @@ test("startup failure preserves existing data and shows a useful screen", async 
     await page.evaluate(() => localStorage.getItem("day-finance-pro:v2")),
   ).toBe("invalid-data");
 });
-test("missing JavaScript leaves a recovery message instead of an empty page", async ({
+test("missing JavaScript reports startup failure instead of waiting forever", async ({
   page,
 }) => {
   await page.route("**/assets/*.js", (route) => route.abort());
@@ -224,5 +224,21 @@ test("missing JavaScript leaves a recovery message instead of an empty page", as
   await expect(
     page.getByRole("heading", { name: "DAY Finance Pro", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("link", { name: "โหลดหน้าใหม่" })).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("โหลดแอปไม่สำเร็จ");
+  await expect(page.getByRole("alert")).toContainText(
+    "ข้อมูลในอุปกรณ์ยังไม่ถูกลบ",
+  );
+});
+
+test("a stalled entry script times out to a recovery screen", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.route("**/assets/*.js", () => {});
+  await page.goto("./", { waitUntil: "commit" });
+  await expect(page.locator("#boot-message")).toContainText("กำลังเปิดแอป");
+  await page.clock.fastForward(9000);
+  await expect(page.getByRole("alert")).toContainText("โหลดแอปไม่สำเร็จ");
   await expect(page.getByRole("link", { name: "โหลดหน้าใหม่" })).toBeVisible();
 });
