@@ -1,13 +1,6 @@
 import { useState, useRef, type FormEvent } from "react";
 import { Check } from "lucide-react";
-import type {
-  Data,
-  Transaction,
-  TransactionType,
-  Wallet,
-  DebtAccount,
-  DebtInstallment,
-} from "../models";
+import type { Data, Transaction, TransactionType } from "../models";
 import {
   id,
   today,
@@ -15,11 +8,10 @@ import {
   walletBalance,
   money,
   outstandingFor,
-  paidFor,
 } from "../finance";
 import { persistTransaction } from "../storage";
 import { Field, ErrorText } from "../components/ui";
-import { labels, walletTypes, failure } from "../lib/presentation";
+import { labels, failure } from "../lib/presentation";
 export function TransactionForm({
   data,
   stale,

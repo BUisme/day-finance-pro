@@ -1,25 +1,8 @@
-import { useState, useRef, type FormEvent } from "react";
-import { Check } from "lucide-react";
-import type {
-  Data,
-  Transaction,
-  TransactionType,
-  Wallet,
-  DebtAccount,
-  DebtInstallment,
-} from "../models";
-import {
-  id,
-  today,
-  parseMoney,
-  walletBalance,
-  money,
-  outstandingFor,
-  paidFor,
-} from "../finance";
-import { persistTransaction } from "../storage";
+import { useState } from "react";
+import type { Data } from "../models";
+import { id, parseMoney } from "../finance";
 import { Field, ErrorText } from "../components/ui";
-import { labels, walletTypes, failure } from "../lib/presentation";
+import { failure } from "../lib/presentation";
 export function PlanForm({
   data,
   month,
