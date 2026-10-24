@@ -4,11 +4,17 @@ async function noOverflow(page: import("@playwright/test").Page) {
     viewport: innerWidth,
     width: document.documentElement.scrollWidth,
     overflowing: Array.from(document.querySelectorAll("body *"))
-      .filter(node => node.getBoundingClientRect().right > innerWidth + 1)
+      .filter((node) => node.getBoundingClientRect().right > innerWidth + 1)
       .slice(0, 12)
-      .map(node => ({ tag: node.tagName, class: node.className, width: node.getBoundingClientRect().width })),
+      .map((node) => ({
+        tag: node.tagName,
+        class: node.className,
+        width: node.getBoundingClientRect().width,
+      })),
   }));
-  expect(layout.width, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewport);
+  expect(layout.width, JSON.stringify(layout)).toBeLessThanOrEqual(
+    layout.viewport,
+  );
 }
 test("four pages, plan, wallets, debt schedules and responsive widths", async ({
   page,
@@ -77,16 +83,14 @@ test("submit duplicate protection, transfer validation, receipt and reload", asy
   await page.getByRole("button", { name: "เพิ่มรายการ", exact: true }).click();
   await page.getByLabel("จำนวนเงิน (บาท)").fill("12.34");
   await page.getByLabel("รายละเอียด (ไม่บังคับ)").fill("รายการทดสอบพร้อมสลิป");
-  await page
-    .getByLabel("แนบสลิป", { exact: false })
-    .setInputFiles({
-      name: "test.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8ioAAAAASUVORK5CYII=",
-        "base64",
-      ),
-    });
+  await page.getByLabel("แนบสลิป", { exact: false }).setInputFiles({
+    name: "test.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8ioAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  });
   await page
     .getByRole("button", { name: "บันทึกรายการ", exact: true })
     .evaluate((node: HTMLButtonElement) => {
@@ -150,36 +154,75 @@ test("partial debt payment updates outstanding exactly once", async ({
   });
 });
 
-
-test("production Dashboard loads all assets from the GitHub Pages subpath", async ({ page }) => {
+test("production Dashboard loads all assets from the GitHub Pages subpath", async ({
+  page,
+}) => {
   const runtimeErrors: string[] = [];
   const failedRequests: string[] = [];
-  page.on("pageerror", error => runtimeErrors.push(error.message));
-  page.on("requestfailed", request => failedRequests.push(request.url()));
-  page.on("response", response => {
-    if (response.status() >= 400) failedRequests.push(`${response.status()} ${response.url()}`);
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(request.url()));
+  page.on("response", (response) => {
+    if (response.status() >= 400)
+      failedRequests.push(`${response.status()} ${response.url()}`);
   });
   await page.goto("./");
   await expect(page).toHaveTitle("DAY Finance Pro");
-  await expect(page.getByRole("heading", { name: "สรุปการเงิน." })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "สรุปการเงิน." }),
+  ).toBeVisible();
   await expect(page.locator(".hero-card")).toContainText("เงินคงเหลือตามแผน");
-  const assets = await page.locator('script[type="module"][src], link[rel="stylesheet"][href]').evaluateAll(nodes =>
-    nodes.map(node => node.getAttribute("src") || node.getAttribute("href")!),
-  );
+  const assets = await page
+    .locator('script[type="module"][src], link[rel="stylesheet"][href]')
+    .evaluateAll((nodes) =>
+      nodes.map(
+        (node) => node.getAttribute("src") || node.getAttribute("href")!,
+      ),
+    );
   expect(assets.length).toBeGreaterThanOrEqual(2);
   for (const asset of assets) {
     expect(asset).toMatch(/^\/day-finance-pro\/assets\//);
     const response = await page.request.get(new URL(asset, page.url()).href);
     expect(response.status()).toBe(200);
-    expect(response.headers()["content-type"]).toMatch(asset.endsWith(".css") ? /text\/css/ : /javascript/);
+    expect(response.headers()["content-type"]).toMatch(
+      asset.endsWith(".css") ? /text\/css/ : /javascript/,
+    );
   }
   // Tabs use component state rather than pathname routing; refresh stays on the app entry.
   await page.getByRole("button", { name: "กระเป๋า", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "กระเป๋าของคุณ." })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "กระเป๋าของคุณ." }),
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/day-finance-pro\/$/);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "สรุปการเงิน." })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "สรุปการเงิน." }),
+  ).toBeVisible();
   await noOverflow(page);
   expect(runtimeErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
+});
+
+test("startup failure preserves existing data and shows a useful screen", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("day-finance-pro:v2", "invalid-data"),
+  );
+  await page.goto("./");
+  await expect(
+    page.getByRole("heading", { name: "เปิดข้อมูลไม่ได้" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => localStorage.getItem("day-finance-pro:v2")),
+  ).toBe("invalid-data");
+});
+test("missing JavaScript leaves a recovery message instead of an empty page", async ({
+  page,
+}) => {
+  await page.route("**/assets/*.js", (route) => route.abort());
+  await page.goto("./");
+  await expect(
+    page.getByRole("heading", { name: "DAY Finance Pro", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "โหลดหน้าใหม่" })).toBeVisible();
 });

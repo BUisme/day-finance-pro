@@ -57,7 +57,12 @@ src/models.ts    TypeScript models
 src/finance.ts   การคำนวณและตรวจสอบ ledger (pure functions)
 src/seed.ts      ข้อมูลตัวอย่าง สร้างเฉพาะครั้งแรก
 src/storage.ts   localStorage metadata + IndexedDB blobs
-src/App.tsx      หน้าจอและฟอร์ม
+src/App.tsx      โครงแอปและการสลับหน้า
+src/pages/       Dashboard, Wallets, Debts, Transactions แยกโมดูล
+src/forms/       ฟอร์มธุรกรรม กระเป๋า แผน และตารางหนี้
+src/components/  UI ที่ใช้ร่วมกัน + error boundary
+src/hooks/       การโหลด/บันทึก state และตรวจแท็บอื่น
+src/lib/         ป้ายข้อความและไอคอน
 src/styles.css   Design tokens, responsive layout, Tailwind import
  tests/          Vitest unit/persistence และ Playwright browser tests
 ```
@@ -66,10 +71,9 @@ src/styles.css   Design tokens, responsive layout, Tailwind import
 
 ## ขอบเขตและข้อจำกัด
 
-ไม่มี reference image ในไฟล์แนบที่ได้รับ จึงใช้ tokens ใน brief เป็นแนวทาง ไม่มี export/backup, auth, sync, QR, ดอกเบี้ยซับซ้อน หรือ backend ไม่แตะ AppSheet/Google Sheets ไม่ deploy อัตโนมัติ ไม่ merge PR อัตโนมัติ
+ไม่มี reference image ในไฟล์แนบที่ได้รับ จึงใช้ tokens ใน brief เป็นแนวทาง ไม่มี export/backup, auth, sync, QR, ดอกเบี้ยซับซ้อน หรือ backend ไม่แตะ AppSheet/Google Sheets deploy เฉพาะ dist หลัง push เข้า main ไม่ merge PR อัตโนมัติ
 
 V2.1 ควรเพิ่ม backup/restore ที่ผู้ใช้ควบคุม, migration/validation ของข้อมูลเต็มรูปแบบ, การแก้ไขหรือ void transaction และ backend ตามขอบเขตที่อนุมัติแยกต่างหาก
-
 
 ## GitHub Pages
 
@@ -82,3 +86,9 @@ Vite กำหนด `base: '/day-finance-pro/'` ให้ JS/CSS ใน `dist/i
 5. รอ build/deploy สำเร็จ แล้วเปิด `https://buisme.github.io/day-finance-pro/` ต้องเห็น DAY Finance Pro และสรุปการเงิน ตรวจ Network ว่า JS/CSS มาจาก `/day-finance-pro/assets/` ได้ HTTP 200 หากยังเห็นไฟล์เก่าให้ลอง hard refresh
 
 ทดสอบก่อน deploy: `npm ci --cache /tmp/day-npm-cache && npm run typecheck && npm test && npm run build && npm run test:e2e` Playwright ใช้ production preview ที่ port 4173 และทดสอบ subpath จริง รวมการเปิด Dashboard, asset status/MIME, สลับแท็บ และ reload โดยใช้ browser context แยก ไม่ล้างข้อมูลผู้ใช้
+
+## โครงสร้างใหม่
+
+หน้าแอปและ CSS ถูกเขียนใหม่ แยก shell/pages/forms ออกจากกัน โดยคงสัญญาข้อมูล v2, กฎการเงินที่ผ่าน tests และที่เก็บสลิปเดิมไว้ ไม่ล้าง localStorage หรือ IndexedDB มีหน้ารองรับ startup failure และ React error boundary แทนหน้าขาว
+
+โฟลเดอร์ workflow ต้องเหลือ `ci.yml` สำหรับตรวจโค้ด และ `pages.yml` สำหรับ build/deploy React เท่านั้น ลบ `static.yml` และ `jekyll-gh-pages.yml` ที่ส่ง source repository โดยไม่ build ออกแล้ว อย่าเพิ่ม template เหล่านั้นกลับมาสำหรับแอป Vite นี้
